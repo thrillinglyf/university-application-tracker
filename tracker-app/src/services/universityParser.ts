@@ -1,3 +1,5 @@
+import { parseMastersPortalContent } from './mastersPortalParser';
+
 export interface ExtractedCourseInfo {
   id: string;
   courseName: string;
@@ -46,6 +48,19 @@ export async function scrapeUniversityPrograms(
   let targetUrl = rawUrl.trim();
   if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
     targetUrl = `https://${targetUrl}`;
+  }
+
+  // Special Handler for MastersPortal.com URLs
+  if (targetUrl.includes('mastersportal.com')) {
+    const mpResult = parseMastersPortalContent('', targetUrl);
+    return {
+      universityName: 'MastersPortal Programs Catalog',
+      country: 'Europe / International',
+      city: 'International',
+      sourceUrl: targetUrl,
+      detectedCategories: Array.from(new Set(mpResult.courses.map((c) => c.category))),
+      courses: mpResult.courses,
+    };
   }
 
   let domain = '';

@@ -22,6 +22,7 @@ import {
   ACADEMIC_DISCIPLINES 
 } from '../services/universityParser';
 import { parseRawCatalogText } from '../services/textCatalogParser';
+import { parseMastersPortalContent } from '../services/mastersPortalParser';
 import { UniversityApplication } from '../types';
 import { ClipboardPaste, AlertTriangle, Info } from 'lucide-react';
 
@@ -80,13 +81,22 @@ export const UniversityUrlExtractorModal: React.FC<UniversityUrlExtractorModalPr
 
     setIsLoading(true);
     setTimeout(() => {
-      const parsedCourses = parseRawCatalogText(
-        rawPastedText,
-        pastedUniName || 'Custom University'
-      );
+      // Check if text was copied from MastersPortal
+      let parsedCourses;
+      let uniTitle = pastedUniName || 'Custom University';
+
+      if (rawPastedText.toLowerCase().includes('mastersportal') || rawPastedText.includes('EUR/year') || rawPastedText.includes('Tuition')) {
+        const mpParsed = parseMastersPortalContent(rawPastedText);
+        parsedCourses = mpParsed.courses;
+        if (!pastedUniName && mpParsed.institutionName !== 'MastersPortal University') {
+          uniTitle = mpParsed.institutionName;
+        }
+      } else {
+        parsedCourses = parseRawCatalogText(rawPastedText, uniTitle);
+      }
 
       setExtractedData({
-        universityName: pastedUniName || 'Custom University',
+        universityName: uniTitle,
         country: 'United States',
         city: 'Campus',
         sourceUrl: 'Direct Page Text Import',
@@ -261,7 +271,22 @@ export const UniversityUrlExtractorModal: React.FC<UniversityUrlExtractorModalPr
             {/* Quick-Pick University Presets */}
             <div className="flex items-center gap-2 mt-2.5 text-[11px] text-slate-500 flex-wrap">
               <span className="font-semibold text-slate-400">Quick Test URLs:</span>
-              {['harvard.edu', 'mit.edu', 'tum.de', 'stanford.edu', 'cam.ac.uk', 'utoronto.ca', 'columbia.edu'].map((preset) => (
+              <button
+                type="button"
+                onClick={() => {
+                  setInputUrl('https://www.mastersportal.com');
+                  setIsLoading(true);
+                  scrapeUniversityPrograms('https://www.mastersportal.com').then((res) => {
+                    setExtractedData(res);
+                    if (res.courses.length > 0) setSelectedCourseIds([res.courses[0].id]);
+                    setIsLoading(false);
+                  });
+                }}
+                className="hover:text-amber-600 font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 transition-colors flex items-center gap-1"
+              >
+                🎓 MastersPortal.com
+              </button>
+              {['harvard.edu', 'mit.edu', 'tum.de', 'stanford.edu', 'cam.ac.uk', 'utoronto.ca'].map((preset) => (
                 <button
                   key={preset}
                   type="button"
