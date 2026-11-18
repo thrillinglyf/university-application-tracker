@@ -18,6 +18,7 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { ListView } from './components/ListView';
 import { CollegesOfInterestView } from './components/CollegesOfInterestView';
 import { CurrencyConverterBar } from './components/CurrencyConverterBar';
+import { UniversityUrlExtractorModal } from './components/UniversityUrlExtractorModal';
 import { ApplicationModal } from './components/ApplicationModal';
 import { ProfileCard } from './components/ProfileCard';
 import { StatsOverview } from './components/StatsOverview';
@@ -74,6 +75,7 @@ export function App() {
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExtractorOpen, setIsExtractorOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<UniversityApplication | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -261,6 +263,16 @@ export function App() {
                 ⭐ Colleges of Interest
               </button>
             </div>
+
+            {/* Import by Link Button */}
+            <button
+              onClick={() => setIsExtractorOpen(true)}
+              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+              title="Paste university link to extract courses, deadlines, and documents"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Import via Link</span>
+            </button>
 
             {/* Add App Button */}
             <button
@@ -452,6 +464,15 @@ export function App() {
           />
         )}
       </main>
+
+      {/* AI URL Extractor Modal */}
+      <UniversityUrlExtractorModal
+        isOpen={isExtractorOpen}
+        onClose={() => setIsExtractorOpen(false)}
+        onAddApplication={handleCreateOrUpdate}
+        preferredCurrency={preferredCurrency}
+        rates={exchangeRates}
+      />
 
       {/* Application Add/Edit Modal */}
       <ApplicationModal
