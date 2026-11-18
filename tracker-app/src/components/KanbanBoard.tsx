@@ -19,6 +19,8 @@ interface KanbanBoardProps {
   onSelectApp: (app: UniversityApplication) => void;
   onUpdateStatus: (id: string, newStatus: ApplicationStatus) => void;
   onToggleChecklist: (appId: string, itemId: string) => void;
+  preferredCurrency?: string;
+  rates?: Record<string, number>;
 }
 
 const COLUMNS: { status: ApplicationStatus; title: string; color: string; badgeBg: string }[] = [
@@ -37,6 +39,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onSelectApp,
   onUpdateStatus,
   onToggleChecklist,
+  preferredCurrency = 'USD',
+  rates = {},
 }) => {
   const getDaysUntilDeadline = (deadlineStr: string) => {
     if (!deadlineStr) return null;
@@ -190,7 +194,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 <CheckCircle2 className="w-3 h-3" /> Fee Paid
                               </span>
                             ) : (
-                              <span>Fee: {app.currency} {app.applicationFee}</span>
+                              <span>
+                                Fee: {app.currency} {app.applicationFee}
+                                {preferredCurrency && app.currency !== preferredCurrency && rates[app.currency] && rates[preferredCurrency] && (
+                                  <span className="text-[10px] text-slate-400 block font-normal">
+                                    ≈ {preferredCurrency} {Math.round((app.applicationFee / rates[app.currency]) * rates[preferredCurrency])}
+                                  </span>
+                                )}
+                              </span>
                             )}
                           </>
                         ) : null}

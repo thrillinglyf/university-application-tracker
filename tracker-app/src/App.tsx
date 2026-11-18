@@ -17,6 +17,7 @@ import { INITIAL_APPLICATIONS, INITIAL_PROFILE } from './mockData';
 import { KanbanBoard } from './components/KanbanBoard';
 import { ListView } from './components/ListView';
 import { CollegesOfInterestView } from './components/CollegesOfInterestView';
+import { CurrencyConverterBar } from './components/CurrencyConverterBar';
 import { ApplicationModal } from './components/ApplicationModal';
 import { ProfileCard } from './components/ProfileCard';
 import { StatsOverview } from './components/StatsOverview';
@@ -53,6 +54,17 @@ export function App() {
 
   // View mode
   const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'interests'>('kanban');
+
+  // Currency Converter state
+  const [preferredCurrency, setPreferredCurrency] = useState<string>(() => {
+    return localStorage.getItem('gradtrack_preferred_currency') || 'USD';
+  });
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+
+  const handleCurrencyChange = (curr: string) => {
+    setPreferredCurrency(curr);
+    localStorage.setItem('gradtrack_preferred_currency', curr);
+  };
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -192,6 +204,14 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16">
+      {/* Top Global Live Currency Converter Bar */}
+      <CurrencyConverterBar
+        preferredCurrency={preferredCurrency}
+        onCurrencyChange={handleCurrencyChange}
+        rates={exchangeRates}
+        onRatesUpdate={setExchangeRates}
+      />
+
       {/* Top Navigation Bar */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -262,7 +282,11 @@ export function App() {
         <ProfileCard profile={profile} onUpdateProfile={setProfile} />
 
         {/* Quick Stats Overview */}
-        <StatsOverview applications={applications} />
+        <StatsOverview
+          applications={applications}
+          preferredCurrency={preferredCurrency}
+          rates={exchangeRates}
+        />
 
         {/* Filter & Search Bar */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -372,6 +396,8 @@ export function App() {
             }}
             onUpdateStatus={handleUpdateStatus}
             onToggleChecklist={handleToggleChecklist}
+            preferredCurrency={preferredCurrency}
+            rates={exchangeRates}
           />
         ) : viewMode === 'list' ? (
           <ListView
@@ -382,6 +408,8 @@ export function App() {
             }}
             onDeleteApp={handleDelete}
             onUpdateStatus={handleUpdateStatus}
+            preferredCurrency={preferredCurrency}
+            rates={exchangeRates}
           />
         ) : (
           <CollegesOfInterestView

@@ -16,6 +16,8 @@ interface ListViewProps {
   onSelectApp: (app: UniversityApplication) => void;
   onDeleteApp: (id: string) => void;
   onUpdateStatus: (id: string, status: ApplicationStatus) => void;
+  preferredCurrency?: string;
+  rates?: Record<string, number>;
 }
 
 export const ListView: React.FC<ListViewProps> = ({
@@ -23,6 +25,8 @@ export const ListView: React.FC<ListViewProps> = ({
   onSelectApp,
   onDeleteApp,
   onUpdateStatus,
+  preferredCurrency = 'USD',
+  rates = {},
 }) => {
   const getStatusBadge = (status: ApplicationStatus) => {
     switch (status) {
@@ -131,6 +135,11 @@ export const ListView: React.FC<ListViewProps> = ({
                             <span className={app.feePaid ? 'text-emerald-600 font-bold' : 'text-amber-600'}>
                               ({app.feePaid ? 'Paid' : 'Unpaid'})
                             </span>
+                            {preferredCurrency && app.currency !== preferredCurrency && rates[app.currency] && rates[preferredCurrency] && (
+                              <div className="text-[11px] text-slate-400 font-normal">
+                                ≈ {preferredCurrency} {Math.round((app.applicationFee / rates[app.currency]) * rates[preferredCurrency])}
+                              </div>
+                            )}
                           </span>
                         ) : (
                           'N/A'

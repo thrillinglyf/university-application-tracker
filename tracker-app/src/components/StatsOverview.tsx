@@ -12,9 +12,15 @@ import { UniversityApplication } from '../types';
 
 interface StatsOverviewProps {
   applications: UniversityApplication[];
+  preferredCurrency?: string;
+  rates?: Record<string, number>;
 }
 
-export const StatsOverview: React.FC<StatsOverviewProps> = ({ applications }) => {
+export const StatsOverview: React.FC<StatsOverviewProps> = ({ 
+  applications,
+  preferredCurrency = 'USD',
+  rates = {},
+}) => {
   const total = applications.length;
   const submitted = applications.filter(
     (a) => a.status === 'Submitted' || a.status === 'Interview' || a.status === 'Admitted' || a.status === 'Waitlisted' || a.status === 'Rejected'
@@ -24,16 +30,13 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ applications }) =>
   const targetCount = applications.filter((a) => a.tier === 'Target').length;
   const safeCount = applications.filter((a) => a.tier === 'Safe').length;
 
-  // Approximate total application fees
-  const totalFeeUSD = applications.reduce((sum, a) => {
+  // Total application fees converted to preferredCurrency
+  const totalFeeConverted = applications.reduce((sum, a) => {
     if (!a.applicationFee) return sum;
-    // Simple approx conversion for stats
-    let rate = 1;
-    if (a.currency === 'EUR') rate = 1.08;
-    if (a.currency === 'GBP') rate = 1.28;
-    if (a.currency === 'CAD') rate = 0.73;
-    if (a.currency === 'INR') rate = 0.012;
-    return sum + Math.round(a.applicationFee * rate);
+    const rateApp = rates[a.currency] || 1;
+    const rateTarget = rates[preferredCurrency] || 1;
+    const converted = (a.applicationFee / rateApp) * rateTarget;
+    return sum + converted;
   }, 0);
 
   // Deadlines in next 14 days
@@ -122,8 +125,10 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ applications }) =>
           <DollarSign className="w-4 h-4 text-slate-500" />
         </div>
         <div className="mt-2">
-          <div className="text-2xl font-black text-slate-800">~${totalFeeUSD}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Estimated in USD</div>
+          <div className="text-xl font-black text-slate-800">
+            {preferredCurrency} {Math.round(totalFeeConverted).toLocaleString()}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Live rates converted</div>
         </div>
       </div>
     </div>
