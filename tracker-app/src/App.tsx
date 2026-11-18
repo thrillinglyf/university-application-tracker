@@ -274,15 +274,16 @@ export function App() {
               <span>Import via Link</span>
             </button>
 
-            {/* Add App Button */}
+            {/* Add App Button (Manual Mode) */}
             <button
               onClick={() => {
                 setEditingApp(null);
                 setIsModalOpen(true);
               }}
-              className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+              title="Add application manually with your own details"
             >
-              <Plus className="w-4 h-4" /> Add Application
+              <Plus className="w-4 h-4" /> Add Manually
             </button>
           </div>
         </div>

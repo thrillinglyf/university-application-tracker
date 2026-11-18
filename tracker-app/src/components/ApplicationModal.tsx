@@ -134,10 +134,15 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({
               <School className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">
-                {application ? 'Edit University Application' : 'Add New University Application'}
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                {application ? 'Edit Application Details' : 'Manual Entry: Add University Application'}
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  ✏️ Manual Mode (Stored Locally)
+                </span>
               </h2>
-              <p className="text-xs text-slate-500">Keep track of requirements, documents, and portal credentials</p>
+              <p className="text-xs text-slate-500">
+                Directly enter your university, program, deadlines, testing rules, and custom document checklists without any web scraping.
+              </p>
             </div>
           </div>
           <button
@@ -190,11 +195,27 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. MS in Computer Science"
+                  placeholder="e.g. MS in Mechanical Engineering or Full-Time MBA"
                   value={formData.programName}
                   onChange={(e) => setFormData({ ...formData, programName: e.target.value })}
                   className="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Degree Type</label>
+                <select
+                  value={formData.degree}
+                  onChange={(e) => setFormData({ ...formData, degree: e.target.value as any })}
+                  className="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                >
+                  <option value="MS">MS (Master of Science)</option>
+                  <option value="MEng">MEng (Master of Engineering)</option>
+                  <option value="MBA">MBA (Master of Business Admin)</option>
+                  <option value="MA">MA (Master of Arts)</option>
+                  <option value="PhD">PhD (Doctor of Philosophy)</option>
+                  <option value="Other">Other / Dual Degree</option>
+                </select>
               </div>
 
               <div>
