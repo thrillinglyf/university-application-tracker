@@ -41,6 +41,10 @@ export interface UniversityApplication {
   checklist: ChecklistItem[];
   notes?: string;
   facultyContacts?: string;
+  isInterestOnly?: boolean; // College of interest / preliminary shortlist (before active application)
+  interestReason?: string; // Why interested: labs, professors, location, budget, ranking
+  ranking?: string; // e.g. US News #6, QS #15
+  averageGpa?: string;
   scholarshipApplied?: boolean;
   createdAt: string;
   updatedAt: string;

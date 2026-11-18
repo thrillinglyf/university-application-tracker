@@ -16,6 +16,7 @@ import { UniversityApplication, ApplicationStatus, PriorityTier, UserProfileScor
 import { INITIAL_APPLICATIONS, INITIAL_PROFILE } from './mockData';
 import { KanbanBoard } from './components/KanbanBoard';
 import { ListView } from './components/ListView';
+import { CollegesOfInterestView } from './components/CollegesOfInterestView';
 import { ApplicationModal } from './components/ApplicationModal';
 import { ProfileCard } from './components/ProfileCard';
 import { StatsOverview } from './components/StatsOverview';
@@ -51,7 +52,7 @@ export function App() {
   });
 
   // View mode
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'interests'>('kanban');
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,7 +218,7 @@ export function App() {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+                <LayoutGrid className="w-3.5 h-3.5" /> Pipeline
               </button>
               <button
                 onClick={() => setViewMode('list')}
@@ -228,6 +229,16 @@ export function App() {
                 }`}
               >
                 <List className="w-3.5 h-3.5" /> Table
+              </button>
+              <button
+                onClick={() => setViewMode('interests')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'interests'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-amber-700 hover:text-amber-800'
+                }`}
+              >
+                ⭐ Colleges of Interest
               </button>
             </div>
 
@@ -362,7 +373,7 @@ export function App() {
             onUpdateStatus={handleUpdateStatus}
             onToggleChecklist={handleToggleChecklist}
           />
-        ) : (
+        ) : viewMode === 'list' ? (
           <ListView
             applications={filteredApps}
             onSelectApp={(app) => {
@@ -371,6 +382,45 @@ export function App() {
             }}
             onDeleteApp={handleDelete}
             onUpdateStatus={handleUpdateStatus}
+          />
+        ) : (
+          <CollegesOfInterestView
+            applications={applications}
+            onSelectApp={(app) => {
+              setEditingApp(app);
+              setIsModalOpen(true);
+            }}
+            onDeleteApp={handleDelete}
+            onConvertToActive={(app) => {
+              handleCreateOrUpdate({
+                ...app,
+                isInterestOnly: false,
+                status: 'In Progress',
+              });
+              setViewMode('kanban');
+            }}
+            onAddNewInterest={() => {
+              setEditingApp({
+                id: `interest-${Date.now()}`,
+                universityName: '',
+                country: 'United States',
+                city: '',
+                programName: '',
+                degree: 'MS',
+                term: 'Fall 2026',
+                tier: 'Target',
+                status: 'Shortlisted',
+                deadline: '',
+                applicationFee: 0,
+                currency: 'USD',
+                feePaid: false,
+                isInterestOnly: true,
+                checklist: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              });
+              setIsModalOpen(true);
+            }}
           />
         )}
       </main>
