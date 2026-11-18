@@ -425,7 +425,7 @@ export async function scrapeUniversityPrograms(
   };
 }
 
-function categorizeProgram(title: string): string {
+export function categorizeProgram(title: string): string {
   const t = title.toLowerCase();
   if (t.includes('computer') || t.includes('data') || t.includes('software') || t.includes('informatics') || t.includes('artificial intelligence') || t.includes('cyber')) {
     return 'Computer & Data Science';

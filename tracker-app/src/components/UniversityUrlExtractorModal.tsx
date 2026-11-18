@@ -21,7 +21,9 @@ import {
   UniversityScrapeResult, 
   ACADEMIC_DISCIPLINES 
 } from '../services/universityParser';
+import { parseRawCatalogText } from '../services/textCatalogParser';
 import { UniversityApplication } from '../types';
+import { ClipboardPaste, AlertTriangle, Info } from 'lucide-react';
 
 interface UniversityUrlExtractorModalProps {
   isOpen: boolean;
@@ -41,6 +43,9 @@ export const UniversityUrlExtractorModal: React.FC<UniversityUrlExtractorModalPr
   if (!isOpen) return null;
 
   const [inputUrl, setInputUrl] = useState('');
+  const [activeTab, setActiveTab] = useState<'url' | 'paste'>('url');
+  const [rawPastedText, setRawPastedText] = useState('');
+  const [pastedUniName, setPastedUniName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [extractedData, setExtractedData] = useState<UniversityScrapeResult | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
@@ -68,6 +73,32 @@ export const UniversityUrlExtractorModal: React.FC<UniversityUrlExtractorModalPr
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleParsePastedText = () => {
+    if (!rawPastedText.trim()) return;
+
+    setIsLoading(true);
+    setTimeout(() => {
+      const parsedCourses = parseRawCatalogText(
+        rawPastedText,
+        pastedUniName || 'Custom University'
+      );
+
+      setExtractedData({
+        universityName: pastedUniName || 'Custom University',
+        country: 'United States',
+        city: 'Campus',
+        sourceUrl: 'Direct Page Text Import',
+        detectedCategories: Array.from(new Set(parsedCourses.map((c) => c.category))),
+        courses: parsedCourses,
+      });
+
+      if (parsedCourses.length > 0) {
+        setSelectedCourseIds([parsedCourses[0].id]);
+      }
+      setIsLoading(false);
+    }, 300);
   };
 
   const toggleSelectCourse = (id: string) => {
@@ -172,59 +203,120 @@ export const UniversityUrlExtractorModal: React.FC<UniversityUrlExtractorModalPr
           </button>
         </div>
 
-        {/* URL Input Form */}
-        <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/60">
-          <form onSubmit={handleScanUrl} className="flex gap-2">
-            <div className="relative flex-1">
-              <Globe className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        {/* Tab Selector: URL Scan vs Direct Page Text Paste */}
+        <div className="flex border-b border-slate-200 bg-slate-100/70 px-4 sm:px-5 pt-2 gap-2 text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('url')}
+            className={`px-4 py-2 border-b-2 rounded-t-lg transition-all flex items-center gap-2 ${
+              activeTab === 'url'
+                ? 'border-sky-600 text-sky-700 bg-white font-bold shadow-xs'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" /> 1. Scrape by URL
+          </button>
+          <button
+            onClick={() => setActiveTab('paste')}
+            className={`px-4 py-2 border-b-2 rounded-t-lg transition-all flex items-center gap-2 ${
+              activeTab === 'paste'
+                ? 'border-sky-600 text-sky-700 bg-white font-bold shadow-xs'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <ClipboardPaste className="w-3.5 h-3.5 text-amber-600" /> 2. Paste Page Text (Bypasses All Blocks)
+          </button>
+        </div>
+
+        {/* Input Forms */}
+        {activeTab === 'url' ? (
+          <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/60">
+            <form onSubmit={handleScanUrl} className="flex gap-2">
+              <div className="relative flex-1">
+                <Globe className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Enter university URL (e.g. harvard.edu, mit.edu, tum.de, cam.ac.uk, oxford.ac.uk, stanford.edu, utoronto.ca)..."
+                  value={inputUrl}
+                  onChange={(e) => setInputUrl(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading || !inputUrl.trim()}
+                className="px-4 sm:px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-300 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition-all whitespace-nowrap"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Scraping...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" /> Scrape All Programs
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Quick-Pick University Presets */}
+            <div className="flex items-center gap-2 mt-2.5 text-[11px] text-slate-500 flex-wrap">
+              <span className="font-semibold text-slate-400">Quick Test URLs:</span>
+              {['harvard.edu', 'mit.edu', 'tum.de', 'stanford.edu', 'cam.ac.uk', 'utoronto.ca', 'columbia.edu'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    setInputUrl(preset);
+                    setIsLoading(true);
+                    scrapeUniversityPrograms(preset).then((res) => {
+                      setExtractedData(res);
+                      if (res.courses.length > 0) setSelectedCourseIds([res.courses[0].id]);
+                      setIsLoading(false);
+                    });
+                  }}
+                  className="hover:text-sky-600 font-medium px-2 py-0.5 rounded bg-white border border-slate-200 hover:border-sky-300 transition-colors"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/60 space-y-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-800">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Why paste?</span> University websites (Cloudflare, Akamai, React SPAs) often block automated web scrapers. Simply press <kbd className="px-1.5 py-0.5 bg-white border rounded shadow-xs font-mono">Ctrl+A</kbd> and <kbd className="px-1.5 py-0.5 bg-white border rounded shadow-xs font-mono">Ctrl+C</kbd> on any program catalog page, and paste it here!
+              </div>
+            </div>
+
+            <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Enter university URL (e.g. harvard.edu, mit.edu, tum.de, cam.ac.uk, oxford.ac.uk, stanford.edu, utoronto.ca)..."
-                value={inputUrl}
-                onChange={(e) => setInputUrl(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                placeholder="University Name (e.g. Johns Hopkins University)..."
+                value={pastedUniName}
+                onChange={(e) => setPastedUniName(e.target.value)}
+                className="w-1/3 text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading || !inputUrl.trim()}
-              className="px-4 sm:px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-300 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition-all whitespace-nowrap"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Scraping...
-                </>
-              ) : (
-                <>
-                  <Search className="w-4 h-4" /> Scrape All Programs
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Quick-Pick University Presets */}
-          <div className="flex items-center gap-2 mt-2.5 text-[11px] text-slate-500 flex-wrap">
-            <span className="font-semibold text-slate-400">Quick Test URLs:</span>
-            {['harvard.edu', 'mit.edu', 'tum.de', 'stanford.edu', 'cam.ac.uk', 'utoronto.ca', 'columbia.edu'].map((preset) => (
               <button
-                key={preset}
                 type="button"
-                onClick={() => {
-                  setInputUrl(preset);
-                  setIsLoading(true);
-                  scrapeUniversityPrograms(preset).then((res) => {
-                    setExtractedData(res);
-                    if (res.courses.length > 0) setSelectedCourseIds([res.courses[0].id]);
-                    setIsLoading(false);
-                  });
-                }}
-                className="hover:text-sky-600 font-medium px-2 py-0.5 rounded bg-white border border-slate-200 hover:border-sky-300 transition-colors"
+                onClick={handleParsePastedText}
+                disabled={!rawPastedText.trim() || isLoading}
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-300 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap ml-auto"
               >
-                {preset}
+                <ClipboardPaste className="w-3.5 h-3.5" /> Parse Courses & Deadlines
               </button>
-            ))}
+            </div>
+
+            <textarea
+              rows={4}
+              value={rawPastedText}
+              onChange={(e) => setRawPastedText(e.target.value)}
+              placeholder="Paste copied text from any graduate admissions or catalog webpage here..."
+              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono bg-white"
+            />
           </div>
-        </div>
+        )}
 
         {/* Results & Disciplines Switcher */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
